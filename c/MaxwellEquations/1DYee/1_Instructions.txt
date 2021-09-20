@@ -1,0 +1,6 @@
+Yee solver for Maxwell equations in 1D with source current
+
+Write a C-program for a 1D Maxwell solver on the FDTD grid with a source current of the form
+j z (x, t) = σ E y (x, t) ,
+where σ is a constant conductivity and periodic boundaries. Play with various conductivities and resolutions.
+Verify your dispersion and stability results empirically.

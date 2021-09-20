@@ -1,0 +1,1 @@
+Yee solver for Maxwell equations in 3D with source current
