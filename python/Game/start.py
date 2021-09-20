@@ -10,33 +10,23 @@ import time
 os.chdir(sys.path[0])
 
 class Platforma():
-    def __init__(self, Okno, tocke_seznam):
+    def __init__(self, Okno):
         '''skonstruiram celo igro z trigerji uvozi slik in booleani'''
         # izris canvasov
         self.canvas=Canvas(Okno, width=1400, height=750)
         self.canvas.grid(row=0, columnspan=2) #ker damo meni zgoraj
-
-        # naredimo ozadje
-        self.bg = PhotoImage(file="grafika/ozadje.gif")
-        self.canvas.create_image(700, 375, image=self.bg)
         
-
         self.stats=Canvas(Okno, width=1300, height=50)
-        self.casovni_okvir=Canvas(Okno, width=100, height=50)
         self.stats.grid(row=1, column=0) 
+        self.casovni_okvir=Canvas(Okno, width=100, height=50)
         self.casovni_okvir.grid(row=1, column=1)
 
         # gradnja menija
         meni=Menu(Okno)
         meni.add_command(label="Restart", command=self.restart)
-        meni.add_command(label="Score", command=lambda : Lestvica(self.tocke_seznam1))# ker bi želel da se lestvica ohranja skozi resete igre
+        meni.add_command(label="Score", command=lambda : Lestvica())# ker bi želel da se lestvica ohranja skozi resete igre
         meni.add_command(label="Izhod", command=Okno.destroy)
         Okno.config(menu=meni)
-
-        # sortiram seznam doseženih točk
-        self.tocke_seznam1=tocke_seznam
-        self.tocke_seznam1.sort()
-
 
         #naloži slike
         self.trava=PhotoImage(file = "grafika/trava.gif")
@@ -62,12 +52,18 @@ class Platforma():
         Okno.bind('<KeyPress>', self.pritisni)
         Okno.bind('<KeyRelease>', self.spusti)
 
+        self.createGame()
+
+    def createGame(self):
+        # naredimo ozadje
+        self.bg = PhotoImage(file="grafika/ozadje.gif")
+        self.canvas.create_image(700, 375, image=self.bg)
+
         #začetna postavitev igralca
         self.igralecX=50
         self.igralecY=650
         self.orientacija=1        
 
-        
         self.koda_d=False               # trigger če se premikam v desno
         self.koda_l=False               # trigger če se premikam v levo
         self.koda_skok=False            # trigger če sem v skoku, torej če se premikam navzor v zraku
@@ -101,10 +97,10 @@ class Platforma():
         self.meja_spod=700
         self.meja_levo=0
         self.meja_desno=1400
-        
+
 
         self.Level1(); #narišemo level
-        
+
         self.ori=1 # orientacija nasprotnika, začnem na levem bregu
         # začetne koordinate
         self.nasprotnikY=370
@@ -116,13 +112,16 @@ class Platforma():
         self.odstevaj_cas();    # žačnem odštevat čas za timer
         self.vrata_funk();      # poženem funkcijo ki nariše vrata in če si pobral vse ključe začnejo utripat
         self.znizaj_travo();    # poženem funkcijo ki bo nižala travo v nekih normalnih presledkih
-
-#==============================================================================================
         self.casovni_korak();   # funkcija ki se zgodi vsako miliskundo in premika vse
-#==============================================================================================
-
         # postavim igralca na polje, da ne povzroča težav pri delete       
         self.igralec1=self.canvas.create_image(self.igralecX, self.igralecY, image=self.igralecD)
+
+    def cancelPeriodicFunctions(self):
+        self.stats.after_cancel(self.odstevaj_cas_item)    # končam odštevanje časa, kar omogoči igralcu približen ogled kako hiter je bil
+        self.canvas.after_cancel(self.vrata_funk_item)      # ugasnem utripanje vrat
+        self.canvas.after_cancel(self.znizaj_travo_item)    # neham gledat padanje trave
+        self.canvas.after_cancel(self.casovni_korak_item)   # končam še vse premike ker se zdaj vse odvija v casovni_korak
+
         
 #==============================================================================================
 # restartiram celo seanso, a moral bi obržati rezultate naše igre
@@ -130,16 +129,11 @@ class Platforma():
     def restart(self):
         '''gumb restart ponovno začne z igro'''
         print("restart")
-        
-        self.canvas.after_cancel(self.casovni_korak_item)
-        self.canvas.after_cancel(self.odstevaj_cas_item)
-        self.canvas.after_cancel(self.vrata_funk_item)   # ugasnem vrata
-        self.canvas.after_cancel(self.znizaj_travo_item) # ugasnem nižanje trave
-        
+        self.cancelPeriodicFunctions()
         self.canvas.delete(ALL)
         self.stats.delete(ALL)
         self.score_str.set("")
-        Platforma(okno, self.tocke_seznam1)
+        self.createGame()
         
 #==============================================================================================
 # trigerji na tipkah
@@ -285,8 +279,9 @@ class Platforma():
         self.seznam_grm=[[625,550],[1025,375],[875,175],[1175,175]]
         self.seznam_led=[[325,25],[575,20]]
         self.seznam_smert=self.seznam_led+self.seznam_grm
-        self.seznam_kljuc=[[1375,275],[925,175],[225,25],[575,75],[1375,25]]#[[675,675]]#
-        
+        self.seznam_kljuc=[[1375,275],[925,175],[225,25],[575,75],[1375,25],[675,675]]
+        # self.seznam_kljuc=[[675,675]]
+
         for i in range(len(self.seznam_trava)):
             self.canvas.create_image(self.seznam_trava[i][0], self.seznam_trava[i][1], image=self.trava)
         for i in range(len(self.seznam_trava_pada)):
@@ -396,22 +391,17 @@ class Platforma():
     def zmaga(self):
         '''funkcija ki ko sem pobral vse ključe pogleda če sem prišel do končnih vrat'''
         if 1320<self.igralecX<1370 and 620<self.igralecY<700:   # koordiante vrat
-            self.canvas.after_cancel(self.odstevaj_cas_item)    # končam odštevanje časa, kar omogoči igralcu približen ogled kako hiter je bil
-            
-            self.canvas.after_cancel(self.casovni_korak_item)   # končam še vse premike ker se zdaj vse odvija v casovni_korak
-            self.canvas.after_cancel(self.vrata_funk_item)      # ugasnem utripanje vrat
-            self.canvas.after_cancel(self.znizaj_travo_item)    # neham gledat padanje trave
+            self.cancelPeriodicFunctions()
             self.score=self.score+floor(self.dolz_cas/100)      # vsakih 0.1s se šteje kot 1 točka, zaokrožimo navzdol do prvega integerja
 
-
             # v seznam dodam sedanji rezultat
-            for indeks in range(len(self.tocke_seznam1)):
-                if self.score>self.tocke_seznam1[indeks]:
+            for indeks in range(len(seznam)):
+                if self.score>seznam[indeks]:
                     if indeks==0:
-                        self.tocke_seznam1[indeks]=self.score
+                        seznam[indeks]=self.score
                     else:
-                        self.tocke_seznam1[indeks-1]=self.tocke_seznam1[indeks]
-                        self.tocke_seznam1[indeks]=self.score
+                        seznam[indeks-1]=seznam[indeks]
+                        seznam[indeks]=self.score
                 else:
                     break
             
@@ -497,13 +487,11 @@ class Platforma():
 
 class Lestvica():
     ''' v točkah so zapisani seznami z podseznami imen in točk'''
-    def __init__(self, tocke):
+    def __init__(self):
         scoreboard=Tk()
         scoreboard.title("Lestvica, of ALL time")
         self.canvas=Canvas(scoreboard, width=300, height=250)
         self.canvas.pack()
-        #seznam=[0,0,0,0,0] # tole je problem ker mi vsakič reseta, ker ne dajem notr celega seznama
-                           # z zgoraj saj mi restart briše seznam
 
         for indeks in range(len(seznam)):
             standing=str(seznam[indeks])
@@ -515,6 +503,6 @@ class Lestvica():
 
 okno=Tk()
 seznam=[0,0,0,0,0]
-Platforma(okno, seznam)
+Platforma(okno)
 okno.title("Super Platformer over 9000")
 okno.mainloop()
