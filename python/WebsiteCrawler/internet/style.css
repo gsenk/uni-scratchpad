@@ -1,0 +1,55 @@
+body {
+  font: 14px Helvetica Neue;
+  text-rendering: optimizeLegibility;
+  margin-top: 1em;
+  overflow-y: scroll;
+}
+
+.body {
+  width: 960px;
+  margin: auto;
+}
+
+.content {
+  position: relative;
+  margin-left: 0px;
+}
+
+.content img {
+  display: block;
+  margin: auto;
+}
+
+.gallery {
+  position: relative;
+  left: 0px;
+  width: 970px;
+}
+
+.content .gallery img {
+  display: inline;
+  width: 226px;
+  height: 180px;
+  border: solid 2px #ccc;
+  margin-right: 10px;
+  margin-bottom: 8px;
+}
+
+.content .gallery a:hover img {
+  border-color: steelblue;
+}
+
+.list {
+  clear: left;
+  margin-top: 14px;
+}
+
+.list img {
+  float: left;
+}
+
+h1 {
+  font-size: 36px;
+  font-weight: 300;
+  margin-bottom: .3em;
+}
